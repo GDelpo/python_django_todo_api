@@ -193,3 +193,24 @@ curl -X GET http://localhost:8000/api/tasks/ \
 * **Puerto ocupado:** Definí `DEV_PORT=8080` en `.env`.
 * **Variables no se aplican en Docker:** Corré `docker compose down` y luego `up --build -d`.
 * **Postgres falla:** Usá `--profile pg` o `COMPOSE_PROFILES=pg` y definí `POSTGRES_*`.
+
+---
+
+## 🖥️ Frontend demo (opcional)
+
+Incluí un mini frontend en `frontend/` con React + Vite para mostrar el uso básico de la API.
+
+Pasos:
+
+1) Backend corriendo (dev en 8000 o prod-like en 8081).
+2) En otra terminal:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Notas:
+
+* El proxy de `vite.config.ts` apunta a <http://localhost:8000>. Si usás prod-like (8081), o ajustá el proxy o consumí el backend directo (cambiando las URLs en `src/main.tsx`).

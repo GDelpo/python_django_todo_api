@@ -26,3 +26,5 @@ htmlcov/
 # Virtual envs
 env/
 venv/
+frontend/node_modules/
+frontend/dist/
