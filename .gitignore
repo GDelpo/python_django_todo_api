@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.env
+
+# VS Code
+.vscode/
+
+# Django
+src/db.sqlite3
+src/staticfiles/
+src/media/
+
+# Byte-compiled / optimized / DLL files
+*.log
+
+# Coverage / test
+htmlcov/
+.coverage*
+.pytest_cache/
+
+# Virtual envs
+env/
+venv/

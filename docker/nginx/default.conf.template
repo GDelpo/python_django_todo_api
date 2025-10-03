@@ -1,0 +1,64 @@
+# HTTP
+server {
+    listen       ${NGINX_PORT_HTTP};
+    server_name  ${SSL_DOMAIN} ${SSL_IP};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS
+server {
+    listen       ${NGINX_PORT_HTTPS} ssl http2;
+    server_name  ${SSL_DOMAIN} ${SSL_IP};
+
+    client_max_body_size 20M;
+
+    ssl_certificate     /etc/letsencrypt/live/${SSL_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${SSL_DOMAIN}/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # Static and media (served from Django's collected folder via volume)
+    location /static/ {
+        alias /app/src/staticfiles/;
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public";
+    }
+
+    location /media/ {
+        alias /app/src/media/;
+        access_log off;
+    }
+
+    location /health/ {
+        access_log off;
+        proxy_pass http://web:8000/health/;
+    }
+
+    location / {
+        proxy_pass http://web:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /nginx_status {
+        stub_status on;
+        access_log off;
+        allow 127.0.0.1;
+        deny all;
+    }
+}

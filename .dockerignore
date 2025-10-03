@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+
+# Venv
+env/
+venv/
+
+# Git
+.git/
+.gitignore
+
+# Editor
+.vscode/
+
+# Django artifacts
+src/db.sqlite3
+src/staticfiles/
+src/media/
+
+# OS noise
+Thumbs.db
+.DS_Storeenv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+staticfiles/
+media/
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store

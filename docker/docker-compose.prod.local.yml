@@ -1,0 +1,10 @@
+services:
+  web:
+    ports:
+      - "${DEV_PORT:-8000}:8000"
+
+  nginx:
+    profiles: ["ssl"]
+
+  certbot:
+    profiles: ["ssl"]

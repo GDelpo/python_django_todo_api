@@ -1,0 +1,87 @@
+services:
+  db:
+    image: postgres:16-alpine
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      REQUIRE_POSTGRES: "true"
+      # Optional admin auto-creation (entrypoint)
+      DJANGO_CREATE_SUPERUSER: ${DJANGO_CREATE_SUPERUSER:-true}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-}
+      DJANGO_SUPERUSER_FIRST_NAME: ${DJANGO_SUPERUSER_FIRST_NAME:-}
+      DJANGO_SUPERUSER_LAST_NAME: ${DJANGO_SUPERUSER_LAST_NAME:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["/bin/sh", "/app/docker/entrypoint.sh", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+    expose:
+      - "8000"
+    volumes:
+      - static_volume:/app/src/staticfiles
+      - media_volume:/app/src/media
+
+  nginx:
+    image: nginx:1.27-alpine
+    env_file:
+      - ../.env
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NGINX_PORT_HTTP: 80
+      NGINX_PORT_HTTPS: 443
+      SSL_DOMAIN: ${SSL_DOMAIN}
+      SSL_IP: ${SSL_IP}
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - static_volume:/app/static:ro
+      - media_volume:/app/media:ro
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  certbot:
+    image: certbot/certbot:latest
+    env_file:
+      - ../.env
+    entrypoint: /bin/sh -c
+    command: >
+      "trap : TERM INT; while :; do certbot renew --webroot -w /var/www/certbot
+      --non-interactive --agree-tos --email ${LETSENCRYPT_EMAIL:-admin@${SSL_DOMAIN}};
+      sleep 7d; done"
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+
+volumes:
+  pgdata:
+  static_volume:
+  media_volume:
+  certbot_www:
+  certbot_conf:
